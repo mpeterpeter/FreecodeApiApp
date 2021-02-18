@@ -1,0 +1,14 @@
+{
+   "author": "Peter Miller",
+   "description": "Testing-field",
+   "version": "0.1.0",
+   "dependencies": {
+      "express": "^4.14.0",
+      "dotenv": "^8.2.0"
+   },
+   "main": "myApp.js",
+   "scripts": {
+      "start": "node myApp.js",
+      "dev": "node-dev myApp.js"
+   }
+}
