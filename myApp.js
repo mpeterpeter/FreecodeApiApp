@@ -166,20 +166,32 @@ const saveMany = (Persons) => {
 };
 
 //saving Users
+//saveMany(Users); 
 //saveMany(Users);
 
 //finding all and showing them, returns a query, exec behandelt die query als json
 //the Document still needs to be saved...
 
+//delete ALL
 const deleteAllByModel = (modelName) => {
-   let _data = goose.model(modelName).find().exec((err, data)=>{ 
-      for(let i=0; i < data.length; i++)
-      goose.model(modelName).deleteOne({name : data[i].name},(err, report) => {
-         console.log(report);
+   const getData = async () => { 
+      const _data = await goose.model(modelName).find();
+      return _data;
+   };
+
+   //Callback test with setinterval
+   setInterval(() => {
+      getData().then(data => {
+         for(let i=0; i < data.length; i++){
+            goose.model(modelName).deleteOne({name : data[i].name},(err, report) => {
+               console.log(report);
+            });
+         }
       });
-   });
+   }, 4000);
 };
 
+//delete by Name
 const deleteManyByName = (name) => {
    goose.model("Person").deleteMany({name : name}, (err, report) =>{
       if(err) throw err;
@@ -205,6 +217,33 @@ function findPeopleByName(personName){
    return myPromise;
 }
 
+// async find by Food
+async function asyncFindPeopleByFood(Food){
+   const data = await goose.model("Person")
+         .find()
+         .where("favoriteFoods")
+         .all([new RegExp(Food,"i")]);
+
+   return data; 
+}
+
+//async find one by specified food
+async function asyncFindOneByFood(Food){
+   const data = await goose.model("Person")
+         .findOne()
+         .where("favoriteFoods")
+         .all([new RegExp(Food,"i")]);
+
+   return data; 
+}
+
+
+// Executing some FUnctions
+asyncFindPeopleByFood("speck")
+   .then(data => {
+      console.log(`You looked for:\n`,data);
+   });
+
 findPeopleByName("Peter")
    .then(data => {
       us = [...us, data];
@@ -213,6 +252,12 @@ findPeopleByName("Peter")
    .catch(err => {
       consolog.log(err);
    });
+
+
+//deleteAllByModel("Person");
+
+
+
 
 
 
