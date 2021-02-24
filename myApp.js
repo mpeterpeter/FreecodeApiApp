@@ -1,7 +1,16 @@
 require("dotenv").config();
-let bodyParser = require("body-parser");
 
-let express = require("express");
+//DataBase setup
+const goose = require("mongoose");
+goose.connect(process.env.MONGO_DB_URI,{useNewUrlParser: true, useUnifiedTopology: true});
+const db = goose.connection;
+db.once("open",()=>{
+   console.log("DB is ready to use");
+});
+
+const bodyParser = require("body-parser");
+const express = require("express");
+
 let app = express();
 const PORT = 3000;
 
@@ -78,6 +87,155 @@ app.get("/json",(req,res,next)=>{
    res.json(message_object);
    next();
 });
+
+
+//------ NEW-------------//
+//MONGO_DB
+//Schema
+const personSchema = new goose.Schema({
+   name : {
+      type : String,
+      required : true
+   },
+   age : Number,
+   favoriteFoods : [String]
+});
+
+let Person = goose.model("Person", personSchema);
+
+//Building the Api
+const createPersonFromModel = (P) => {
+   let newPerson = new Person ({
+      name : P.name,
+      age : P.age,
+      favoriteFoods : P.favoriteFoods
+   });
+
+   return newPerson;
+};
+
+//save Model -> document
+const saveModel = (model) => {
+   model.save((err,data)=>{
+      if(err) throw err;
+
+      console.log("Saved: ",data);
+   });
+};
+
+//create and Save
+var createAndSavePerson = function(done) {
+   var janeFonda = new Person({name: "Jane Fonda", age: 84, favoriteFoods: ["eggs", "fish", "fresh fruit"]});
+ 
+   janeFonda.save(function(err, data) {
+     if (err) return console.error(err);
+     console.log(data);
+   });
+ };
+
+let Peter = createPersonFromModel({name : "Peter Miller", age : 32 , favoriteFoods : ["Pizza"]});
+
+//Document finden
+Person.find({ name : /ruth/i}).exec((err, data)=>{
+   if(err) throw err;
+});
+
+//create Many from a Array
+let users = [
+   {
+      name : "Josef",
+      age : 31,
+      favoriteFoods : ["Linsen mit Speck"]
+   },
+   {
+      name : "Ruth",
+      age : 24,
+      favoriteFoods : ["Schleckle"]
+   },
+   {
+      name : "Peter",
+      age : 32,
+      favoriteFoods : ["Bohnen","Noch mehr Bohnen"]
+   }
+];
+
+let Users = users.map(user => createPersonFromModel(user));
+
+const saveMany = (Persons) => {
+   goose.model("Person").create(Persons);
+};
+
+//saving Users
+//saveMany(Users);
+
+//finding all and showing them, returns a query, exec behandelt die query als json
+//the Document still needs to be saved...
+
+const deleteAllByModel = (modelName) => {
+   let _data = goose.model(modelName).find().exec((err, data)=>{ 
+      for(let i=0; i < data.length; i++)
+      goose.model(modelName).deleteOne({name : data[i].name},(err, report) => {
+         console.log(report);
+      });
+   });
+};
+
+const deleteManyByName = (name) => {
+   goose.model("Person").deleteMany({name : name}, (err, report) =>{
+      if(err) throw err;
+
+      console.log(report);
+   });
+};
+
+//find by name
+let us = [];
+function findPeopleByName(personName){
+   let myPromise = new Promise((res,rej) => {
+      goose.model("Person")
+         .find(personName?{name : new RegExp(personName,"i")}:undefined)
+         .exec((err,data) => {
+            if(err) {
+               rej(err);
+            }
+            res(data);
+         });
+   });
+
+   return myPromise;
+}
+
+findPeopleByName("Peter")
+   .then(data => {
+      us = [...us, data];
+      console.log(us);
+   })
+   .catch(err => {
+      consolog.log(err);
+   });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
